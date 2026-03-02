@@ -1,0 +1,172 @@
+🏗 ROADMAP PROFESSIONNELLE DU PROJET
+
+Je vais te donner un plan structuré comme un architecte backend.
+
+PHASE 1 — AUTHENTIFICATION (OBLIGATOIRE)
+
+Avant WebSocket, avant rooms, avant messages :
+
+👉 On doit implémenter JWT.
+
+Pourquoi ?
+
+Parce que :
+
+WebSocket doit être sécurisé
+
+Les messages doivent être liés à un user authentifié
+
+Les rooms doivent connaître l’utilisateur
+
+🎯 Objectif phase 1
+
+Créer :
+
+/auth/login
+/auth/register
+JwtStrategy
+JwtGuard
+
+Résultat :
+
+Login → retourne un token
+
+Token → utilisé pour REST + WebSocket
+
+PHASE 2 — MODÈLE DATA COMPLET
+
+On doit créer :
+
+📁 Rooms
+
+Schema :
+
+name
+
+isGroup
+
+members[]
+
+createdBy
+
+📁 Messages
+
+Schema :
+
+content
+
+sender
+
+room
+
+attachments
+
+createdAt
+
+Relations Mongoose avec populate.
+
+PHASE 3 — WEBSOCKET GATEWAY
+
+On utilisera :
+
+NestJS WebSocket Gateway
+avec
+Socket.IO
+
+Création de :
+
+chat.gateway.ts
+
+Fonctionnalités :
+
+joinRoom
+
+sendMessage
+
+typing
+
+userOnline
+
+userOffline
+
+PHASE 4 — SCALING HORIZONTAL
+
+Si ton app tourne sur plusieurs serveurs :
+
+Problème :
+Les WebSockets ne partagent pas l’état.
+
+Solution :
+
+Redis Pub/Sub
+
+Utiliser :
+
+@socket.io/redis-adapter
+
+Ainsi :
+
+Plusieurs instances Nest
+
+Messages synchronisés
+
+Scalabilité réelle
+
+PHASE 5 — OPTIMISATION MONGODB
+
+Index sur room
+
+Index TTL pour messages anciens
+
+Aggregation pipeline pour historique
+
+Pagination propre
+
+PHASE 6 — FRONTEND ANGULAR
+
+Avec :
+
+Angular
+
+ngx-socket-io
+
+RxJS WebSocketSubject
+
+ChangeDetectionStrategy.OnPush
+
+trackBy
+
+Lazy loading modules
+
+📊 Où on est exactement ?
+
+On vient de finir :
+
+PHASE 0 — Fondations backend Users
+
+Prochaine étape logique :
+
+PHASE 1 — Authentification JWT
+
+Sans ça, rien de scalable ni sécurisé n’est possible.
+
+🎯 Stratégie intelligente
+
+On ne saute pas directement au WebSocket.
+
+On fait :
+
+1️⃣ Auth propre
+2️⃣ Rooms + Messages REST
+3️⃣ WebSocket Gateway
+4️⃣ Redis scaling
+5️⃣ Optimisation
+
+C’est la bonne manière professionnelle.
+
+🔥 Conclusion
+
+Oui — on est parfaitement alignés avec l’objectif final.
+
+Tu n’es pas en train de bricoler.
+Tu es en train de construire une architecture scalable.

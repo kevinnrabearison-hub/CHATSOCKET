@@ -1,0 +1,108 @@
+<div class="chat-container">
+  <!-- Toolbar -->
+  <div class="chat-toolbar">
+    <span>MEAN Chat</span>
+    <span class="toolbar-spacer"></span>
+    <button class="logout-btn" (click)="logout()">Déconnexion</button>
+  </div>
+
+  <!-- Main Content -->
+  <div class="chat-content">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- Rooms Section -->
+      <div class="sidebar-section">
+        <h3 class="section-title">Conversations</h3>
+        <div class="room-list">
+          <div 
+            *ngFor="let room of rooms" 
+            class="room-item"
+            [class.selected]="currentRoom?._id === room._id"
+            (click)="selectRoom(room)">
+            <div class="room-name">{{ getRoomDisplayName(room) }}</div>
+            <div class="room-members-count">{{ room.members.length }} membres</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Users Section -->
+      <div class="sidebar-section">
+        <h3 class="section-title">Utilisateurs</h3>
+        <div class="user-list">
+          <div 
+            *ngFor="let user of getOtherUsers()" 
+            class="user-item"
+            (click)="createPrivateRoom(user)">
+            <div class="user-info">
+              <div class="user-name">{{ user.username }}</div>
+              <div class="user-status" [class.online]="user.isOnline">
+                {{ user.isOnline ? 'En ligne' : 'Hors ligne' }}
+              </div>
+            </div>
+            <div class="user-indicator" [class.online]="user.isOnline"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-area">
+      <div *ngIf="isLoading" class="loading-container">
+        <div class="spinner">Chargement...</div>
+      </div>
+
+      <div *ngIf="!isLoading && currentRoom" class="chat-main">
+        <!-- Room Header -->
+        <div class="chat-header">
+          <h2>{{ getRoomDisplayName(currentRoom) }}</h2>
+          <span class="room-info">{{ currentRoom.members.length }} membres</span>
+        </div>
+
+        <!-- Messages Container -->
+        <div class="messages-container" (scroll)="onMessageContainerScroll($event)">
+          <div class="messages-list">
+            <div *ngFor="let message of messages" 
+                 class="message-item"
+                 [class.own-message]="isOwnMessage(message)">
+              <div class="message-avatar">
+                <div class="avatar">{{ message.sender.username.charAt(0).toUpperCase() }}</div>
+              </div>
+              <div class="message-content">
+                <div class="message-header">
+                  <span class="message-sender">{{ message.sender.username }}</span>
+                  <span class="message-time">{{ formatTime(message.createdAt) }}</span>
+                </div>
+                <div class="message-text">{{ message.content }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Message Input -->
+        <div class="message-input-container">
+          <form [formGroup]="messageForm" (ngSubmit)="sendMessage()" class="message-form">
+            <input 
+              class="message-input"
+              formControlName="content" 
+              (input)="onTyping()"
+              placeholder="Tapez votre message...">
+            <button 
+              type="submit" 
+              class="send-btn"
+              [disabled]="messageForm.invalid">
+              Envoyer
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div *ngIf="!isLoading && !currentRoom" class="no-room-selected">
+        <div class="no-room-icon">💬</div>
+        <h3>Sélectionnez une conversation</h3>
+        <p>Choisissez une conversation dans la liste pour commencer à discuter</p>
+      </div>
+    </div>
+  </div>
+</div>

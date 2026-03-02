@@ -1,0 +1,98 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <h1>MEAN Chat</h1>
+      <p>Chat en temps réel</p>
+    </div>
+    
+    <div class="login-body">
+      <!-- Mode Toggle -->
+      <div class="mode-toggle">
+        <button 
+          class="toggle-btn" 
+          [class.active]="isLoginMode" 
+          (click)="switchMode()">
+          Connexion
+        </button>
+        <button 
+          class="toggle-btn" 
+          [class.active]="!isLoginMode" 
+          (click)="switchMode()">
+          Inscription
+        </button>
+      </div>
+
+      <!-- Login Form -->
+      <form *ngIf="isLoginMode" [formGroup]="loginForm" (ngSubmit)="onLogin()" class="login-form">
+        <div class="form-group">
+          <label for="login-email">Email</label>
+          <input 
+            id="login-email"
+            type="email" 
+            formControlName="email" 
+            placeholder="votre@email.com"
+            class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="login-password">Mot de passe</label>
+          <input 
+            id="login-password"
+            type="password" 
+            formControlName="password" 
+            placeholder="••••••••"
+            class="form-control">
+        </div>
+
+        <button 
+          type="submit" 
+          class="submit-btn"
+          [disabled]="loginForm.invalid || isLoading">
+          <span *ngIf="!isLoading">Se connecter</span>
+          <span *ngIf="isLoading">Connexion...</span>
+        </button>
+      </form>
+
+      <!-- Register Form -->
+      <form *ngIf="!isLoginMode" [formGroup]="registerForm" (ngSubmit)="onRegister()" class="login-form">
+        <div class="form-group">
+          <label for="register-username">Nom d'utilisateur</label>
+          <input 
+            id="register-username"
+            type="text" 
+            formControlName="username" 
+            placeholder="pseudo"
+            class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="register-email">Email</label>
+          <input 
+            id="register-email"
+            type="email" 
+            formControlName="email" 
+            placeholder="votre@email.com"
+            class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="register-password">Mot de passe</label>
+          <input 
+            id="register-password"
+            type="password" 
+            formControlName="password" 
+            placeholder="••••••••"
+            class="form-control">
+        </div>
+
+        <button 
+          type="submit" 
+          class="submit-btn"
+          [disabled]="registerForm.invalid || isLoading">
+          <span *ngIf="!isLoading">S'inscrire</span>
+          <span *ngIf="isLoading">Inscription...</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
