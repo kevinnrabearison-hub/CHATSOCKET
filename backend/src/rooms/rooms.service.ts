@@ -8,7 +8,7 @@ export class RoomsService {
   constructor(@InjectModel(Room.name) private roomModel: Model<RoomDocument>) {}
 
   /**
-   * Création d'une room privée avec anti-duplication
+   * Création d'une room privée avec anti-duplication et améliorations
    */
   async createPrivateRoom(participants: string[]): Promise<RoomDocument> {
     const participantIds = participants.map(p => new Types.ObjectId(p));
@@ -19,15 +19,28 @@ export class RoomsService {
       );
     }
 
-    // Vérifie si une room existe déjà avec ces participants
+    // Vérifie si une room existe déjà avec ces participants (ordre indifférent)
     const existing = await this.roomModel.findOne({
       members: { $all: participantIds, $size: 2 },
+      isGroup: false
     });
 
-    if (existing) return existing;
+    if (existing) {
+      console.log('📍 Room privée existante trouvée:', existing._id);
+      return existing;
+    }
 
-    const newRoom = new this.roomModel({ members: participantIds });
-    return newRoom.save();
+    // Créer une nouvelle room privée avec des métadonnées
+    const newRoom = new this.roomModel({ 
+      members: participantIds,
+      isGroup: false,
+      name: null, // Les rooms privées n'ont pas de nom
+      createdBy: participantIds[0] // Le premier participant est le créateur
+    });
+    
+    const savedRoom = await newRoom.save();
+    console.log('🏠 Nouvelle room privée créée:', savedRoom._id);
+    return savedRoom;
   }
 
   /**

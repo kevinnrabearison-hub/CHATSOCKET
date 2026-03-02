@@ -123,7 +123,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
-   * Rejoindre une room
+   * Rejoindre une room avec logique améliorée
    */
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(
@@ -132,22 +132,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ): Promise<void> {
     try {
       const { roomId } = data;
+      console.log(`🏠 Utilisateur ${client.user.username} tente de rejoindre la room: ${roomId}`);
 
-      // Vérifier que la room existe et que l'utilisateur y a accès
+      // Vérifier que la room existe
       const room = await this.roomsService.findById(roomId);
       if (!room) {
         throw new WsException('Room introuvable');
       }
 
+      // Vérifier que l'utilisateur est membre de la room
       const isMember = room.members.some(
         (member) => member.toString() === client.userId,
       );
       if (!isMember) {
+        console.log(`❌ Utilisateur ${client.user.username} n'est pas membre de la room ${roomId}`);
+        console.log(`📍 Members de la room:`, room.members.map(m => m.toString()));
+        console.log(`📍 User ID:`, client.userId);
         throw new WsException('Accès non autorisé à cette room');
       }
 
       // Rejoindre la room Socket.IO
       client.join(roomId);
+      console.log(`✅ Utilisateur ${client.user.username} a rejoint la room: ${roomId}`);
 
       // Mettre à jour les rooms rejointes par le client
       const clientData = this.connectedClients.get(client.userId);
@@ -156,18 +162,48 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.connectedClients.set(client.userId, clientData);
       }
 
-      console.log(
-        '🏠 Utilisateur',
-        client.user.username,
-        'a rejoint la room:',
+      // Notifier les autres membres que l'utilisateur a rejoint
+      client.to(roomId).emit('userJoinedRoom', {
         roomId,
-      );
+        user: {
+          _id: client.userId,
+          username: client.user.username,
+          isOnline: true
+        }
+      });
+
+      // Confirmer à l'utilisateur qu'il a rejoint
       client.emit('joinedRoom', { roomId });
+
+      // Envoyer la liste des utilisateurs en ligne dans cette room
+      const onlineUsersInRoom = await this.getOnlineUsersInRoom(roomId);
+      client.emit('onlineUsersInRoom', { roomId, users: onlineUsersInRoom });
 
     } catch (error: any) {
       console.error('❌ Erreur joinRoom:', error.message);
       client.emit('error', { message: error.message });
     }
+  }
+
+  /**
+   * Obtenir les utilisateurs en ligne dans une room spécifique
+   */
+  private async getOnlineUsersInRoom(roomId: string): Promise<any[]> {
+    const room = await this.roomsService.findById(roomId);
+    if (!room) return [];
+
+    const onlineUsers: any[] = [];
+    for (const memberId of room.members) {
+      const clientData = this.connectedClients.get(memberId.toString());
+      if (clientData) {
+        onlineUsers.push({
+          _id: memberId.toString(),
+          socketId: clientData.socketId,
+          isOnline: true,
+        });
+      }
+    }
+    return onlineUsers;
   }
 
   /**

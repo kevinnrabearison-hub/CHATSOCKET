@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
-import { map, tap } from 'rxjs/operators';
+import { map, tap, catchError } from 'rxjs/operators';
 import { User } from './auth.service';
 
 export interface Room {
@@ -38,7 +38,7 @@ export interface CreatePrivateRoomRequest {
   providedIn: 'root'
 })
 export class ChatService {
-  private readonly API_URL = ''; // Utilise le proxy Angular
+  private readonly API_URL = 'http://localhost:3000'; // URL directe pour éviter les problèmes de proxy
   private socket!: Socket; // Assertion non-null
 
   // Subjects pour les données en temps réel
@@ -67,7 +67,7 @@ export class ChatService {
     console.log('Token JWT:', token?.substring(0, 20) + '...');
     
     if (token) {
-      this.socket = io('', { // Utilise le proxy Angular
+      this.socket = io(this.API_URL, { // URL directe du backend
         auth: { token: token.replace('Bearer ', '').trim() }, // Format correct pour Socket.IO
         transports: ['websocket', 'polling']
       });
@@ -93,31 +93,50 @@ export class ChatService {
 
   // API REST
   getUserRooms(): Observable<Room[]> {
+    const token = localStorage.getItem('access_token');
     return this.http.get<Room[]>(`${this.API_URL}/rooms`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+      headers: { Authorization: `Bearer ${token}` }
     }).pipe(
       tap(rooms => this.roomsSubject.next(rooms))
     );
   }
 
   getAllUsers(): Observable<User[]> {
+    const token = localStorage.getItem('access_token');
     return this.http.get<User[]>(`${this.API_URL}/users`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+      headers: { Authorization: `Bearer ${token}` }
     }).pipe(
       tap(users => this.usersSubject.next(users))
     );
   }
 
   createPrivateRoom(userId: string): Observable<Room> {
+    const token = localStorage.getItem('access_token');
+    console.log('🏗️ Création room privée pour userId:', userId, 'token:', token?.substring(0, 20) + '...');
+    console.log('🔍 Type de userId:', typeof userId, 'isValidMongoId:', /^[0-9a-fA-F]{24}$/.test(userId));
+    
+    const headers = { Authorization: `Bearer ${token}` };
+    console.log('🔍 Headers envoyés:', headers);
+    
     return this.http.post<Room>(`${this.API_URL}/rooms/private`, 
       { userId }, 
-      { headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
-    });
+      { headers }
+    ).pipe(
+      tap(response => console.log('✅ Room créée avec succès:', response)),
+      catchError((error: any) => {
+        console.error('❌ Erreur détaillée création room:', error);
+        console.error('❌ Status:', error.status);
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Error body:', error.error);
+        throw error;
+      })
+    );
   }
 
   getRoomMessages(roomId: string): Observable<Message[]> {
+    const token = localStorage.getItem('access_token');
     return this.http.get<Message[]>(`${this.API_URL}/messages/${roomId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+      headers: { Authorization: `Bearer ${token}` }
     }).pipe(
       tap(messages => this.messagesSubject.next(messages))
     );

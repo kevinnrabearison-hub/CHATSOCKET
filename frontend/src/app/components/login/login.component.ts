@@ -56,11 +56,21 @@ export class LoginComponent {
       const registerData: RegisterRequest = this.registerForm.value;
       
       this.authService.register(registerData).subscribe({
-        next: () => {
-          this.router.navigate(['/chat']);
-          alert('Inscription réussie!');
+        next: (response) => {
+          console.log('✅ Inscription réussie:', response);
+          console.log('✅ Token reçu:', response.access_token?.substring(0, 20) + '...');
+          console.log('✅ Utilisateur reçu:', response.user);
+          
+          // Après inscription, on déconnecte et on redirige vers login
+          this.authService.logout();
+          this.isLoading = false;
+          
+          // Passer en mode login et afficher un message de succès
+          this.isLoginMode = true;
+          alert('Inscription réussie! Vous pouvez maintenant vous connecter.');
         },
         error: (error) => {
+          console.error('❌ Erreur inscription:', error);
           alert('Erreur d\'inscription: ' + error.error.message);
           this.isLoading = false;
         }

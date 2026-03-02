@@ -1,107 +1,173 @@
 <div class="chat-container">
-  <!-- Toolbar -->
-  <div class="chat-toolbar">
-    <span>MEAN Chat</span>
-    <span class="toolbar-spacer"></span>
-    <button class="logout-btn" (click)="logout()">Déconnexion</button>
-  </div>
-
-  <!-- Main Content -->
+  <!-- Main Content - 3 Vertical Sections -->
   <div class="chat-content">
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <!-- Rooms Section -->
-      <div class="sidebar-section">
-        <h3 class="section-title">Conversations</h3>
-        <div class="room-list">
-          <div 
-            *ngFor="let room of rooms" 
-            class="room-item"
-            [class.selected]="currentRoom?._id === room._id"
-            (click)="selectRoom(room)">
-            <div class="room-name">{{ getRoomDisplayName(room) }}</div>
-            <div class="room-members-count">{{ room.members.length }} membres</div>
+    <!-- Section 1: Profile et Boutons (Gauche) -->
+    <div class="profile-section">
+      <div class="profile-card">
+        <div class="profile-avatar">
+          {{ currentUser?.username?.charAt(0)?.toUpperCase() }}
+        </div>
+        <div class="profile-info">
+          <div class="profile-name">{{ currentUser?.username }}</div>
+          <div class="profile-status">
+            <span class="status-dot online"></span>
+            En ligne
           </div>
         </div>
       </div>
-
-      <div class="divider"></div>
-
-      <!-- Users Section -->
-      <div class="sidebar-section">
-        <h3 class="section-title">Utilisateurs</h3>
-        <div class="user-list">
-          <div 
-            *ngFor="let user of getOtherUsers()" 
-            class="user-item"
-            (click)="createPrivateRoom(user)">
-            <div class="user-info">
-              <div class="user-name">{{ user.username }}</div>
-              <div class="user-status" [class.online]="user.isOnline">
-                {{ user.isOnline ? 'En ligne' : 'Hors ligne' }}
-              </div>
-            </div>
-            <div class="user-indicator" [class.online]="user.isOnline"></div>
-          </div>
-        </div>
+      
+      <div class="action-buttons">
+        <button class="action-btn primary" title="Nouvelle conversation">
+          <span class="btn-icon">💬</span>
+          <span class="btn-text">Nouveau</span>
+        </button>
+        <button class="action-btn secondary" title="Paramètres">
+          <span class="btn-icon">⚙️</span>
+          <span class="btn-text">Paramètres</span>
+        </button>
+        <button class="action-btn danger" (click)="logout()" title="Déconnexion">
+          <span class="btn-icon">🚪</span>
+          <span class="btn-text">Déconnexion</span>
+        </button>
       </div>
     </div>
 
-    <!-- Chat Area -->
-    <div class="chat-area">
-      <div *ngIf="isLoading" class="loading-container">
-        <div class="spinner">Chargement...</div>
+    <!-- Section 2: Zone de Discussion (Centre) -->
+    <div class="discussion-section">
+      <!-- Header de la conversation -->
+      <div class="discussion-header" *ngIf="currentRoom">
+        <div class="conversation-info">
+          <div class="conversation-avatar">
+            {{ getRoomDisplayName(currentRoom).charAt(0).toUpperCase() }}
+          </div>
+          <div class="conversation-details">
+            <h3>{{ getRoomDisplayName(currentRoom) }}</h3>
+            <span class="conversation-status">
+              {{ getRoomStatus(currentRoom) }}
+            </span>
+          </div>
+        </div>
+        <div class="conversation-actions">
+          <button class="header-btn" title="Plus d'options">⋯</button>
+        </div>
       </div>
 
-      <div *ngIf="!isLoading && currentRoom" class="chat-main">
-        <!-- Room Header -->
-        <div class="chat-header">
-          <h2>{{ getRoomDisplayName(currentRoom) }}</h2>
-          <span class="room-info">{{ currentRoom.members.length }} membres</span>
-        </div>
-
-        <!-- Messages Container -->
-        <div class="messages-container" (scroll)="onMessageContainerScroll($event)">
-          <div class="messages-list">
-            <div *ngFor="let message of messages" 
-                 class="message-item"
-                 [class.own-message]="isOwnMessage(message)">
-              <div class="message-avatar">
-                <div class="avatar">{{ message.sender.username.charAt(0).toUpperCase() }}</div>
+      <!-- Messages -->
+      <div class="messages-container" *ngIf="currentRoom">
+        <div class="messages-list" #messagesContainer>
+          <div 
+            *ngFor="let message of messages" 
+            class="message-item"
+            [class.own-message]="isOwnMessage(message)"
+            [class.other-message]="!isOwnMessage(message)">
+            
+            <!-- Message des autres (gauche) -->
+            <div *ngIf="!isOwnMessage(message)" class="message-left">
+              <div class="sender-avatar">
+                {{ message.sender.username.charAt(0).toUpperCase() }}
               </div>
-              <div class="message-content">
-                <div class="message-header">
-                  <span class="message-sender">{{ message.sender.username }}</span>
-                  <span class="message-time">{{ formatTime(message.createdAt) }}</span>
+              <div class="message-content-left">
+                <div class="sender-name">{{ message.sender.username }}</div>
+                <div class="message-bubble-left">
+                  {{ message.content }}
                 </div>
-                <div class="message-text">{{ message.content }}</div>
+                <div class="message-time">{{ formatMessageTime(message.createdAt) }}</div>
+              </div>
+            </div>
+
+            <!-- Message de l'utilisateur (droite) -->
+            <div *ngIf="isOwnMessage(message)" class="message-right">
+              <div class="message-content-right">
+                <div class="message-bubble-right">
+                  {{ message.content }}
+                </div>
+                <div class="message-time">{{ formatMessageTime(message.createdAt) }}</div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Message Input -->
-        <div class="message-input-container">
-          <form [formGroup]="messageForm" (ngSubmit)="sendMessage()" class="message-form">
+      <!-- Welcome Screen si pas de conversation -->
+      <div class="welcome-screen" *ngIf="!currentRoom">
+        <div class="welcome-content">
+          <div class="welcome-icon">💬</div>
+          <h2>Bienvenue, {{ currentUser?.username }}!</h2>
+          <p>Sélectionnez une conversation ou cliquez sur un utilisateur pour commencer à discuter</p>
+        </div>
+      </div>
+
+      <!-- Input de message -->
+      <div class="message-input-container" *ngIf="currentRoom">
+        <form [formGroup]="messageForm" (ngSubmit)="sendMessage()" class="message-form">
+          <div class="input-wrapper">
+            <button type="button" class="attach-btn" title="Joindre un fichier">📎</button>
             <input 
               class="message-input"
               formControlName="content" 
               (input)="onTyping()"
               placeholder="Tapez votre message...">
-            <button 
-              type="submit" 
-              class="send-btn"
-              [disabled]="messageForm.invalid">
-              Envoyer
-            </button>
-          </form>
+            <button type="button" class="emoji-btn" title="Emoji">😊</button>
+          </div>
+          <button 
+            type="submit" 
+            class="send-btn"
+            [disabled]="messageForm.invalid">
+            <span class="send-icon">📤</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Section 3: Utilisateurs et Historique (Droite) -->
+    <div class="users-history-section">
+      <!-- Liste des utilisateurs connectés -->
+      <div class="users-panel">
+        <div class="panel-header">
+          <h4>👥 Utilisateurs en ligne</h4>
+          <span class="user-count">{{ getOnlineUsers().length }}</span>
+        </div>
+        <div class="users-list">
+          <div 
+            *ngFor="let user of users" 
+            class="user-item"
+            [class.clickable]="user._id !== currentUser?._id"
+            (click)="createPrivateRoom(user)"
+            [class.disabled]="user._id === currentUser?._id">
+            <div class="user-avatar-small">
+              {{ user.username.charAt(0).toUpperCase() }}
+              <span class="status-dot" [class.online]="user.isOnline"></span>
+            </div>
+            <div class="user-name-small">{{ user.username }}</div>
+          </div>
         </div>
       </div>
 
-      <div *ngIf="!isLoading && !currentRoom" class="no-room-selected">
-        <div class="no-room-icon">💬</div>
-        <h3>Sélectionnez une conversation</h3>
-        <p>Choisissez une conversation dans la liste pour commencer à discuter</p>
+      <!-- Historique des conversations -->
+      <div class="history-panel">
+        <div class="panel-header">
+          <h4>💬 Conversations</h4>
+          <span class="history-count">{{ rooms.length }}</span>
+        </div>
+        <div class="history-list">
+          <div 
+            *ngFor="let room of rooms" 
+            class="history-item"
+            [class.selected]="currentRoom?._id === room._id"
+            (click)="selectRoom(room)">
+            <div class="history-avatar-small">
+              {{ getRoomDisplayName(room).charAt(0).toUpperCase() }}
+            </div>
+            <div class="history-info-small">
+              <div class="history-name-small">{{ getRoomDisplayName(room) }}</div>
+              <div class="history-preview-small">{{ getLastMessage(room) || 'Nouveau message' }}</div>
+            </div>
+            <div class="history-meta">
+              <span class="history-time">{{ getLastMessageTime(room) }}</span>
+              <span class="unread-badge" *ngIf="getUnreadCount(room) > 0">{{ getUnreadCount(room) }}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

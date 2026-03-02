@@ -32,7 +32,7 @@ export interface RegisterRequest {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly API_URL = 'http://localhost:3000/auth';
+  private readonly API_URL = 'http://localhost:3000'; // URL directe pour éviter les problèmes de proxy
   private readonly TOKEN_KEY = 'access_token';
   private readonly USER_KEY = 'current_user';
 
@@ -47,13 +47,15 @@ export class AuthService {
   }
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.API_URL}/login`, credentials).pipe(
+    console.log('🔑 Tentative de login vers:', `${this.API_URL}/auth/login`);
+    return this.http.post<AuthResponse>(`${this.API_URL}/auth/login`, credentials).pipe(
       tap(response => this.handleAuthSuccess(response))
     );
   }
 
   register(userData: RegisterRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.API_URL}/register`, userData).pipe(
+    console.log('📝 Tentative de register vers:', `${this.API_URL}/auth/register`);
+    return this.http.post<AuthResponse>(`${this.API_URL}/auth/register`, userData).pipe(
       tap(response => this.handleAuthSuccess(response))
     );
   }
@@ -78,9 +80,23 @@ export class AuthService {
   }
 
   private handleAuthSuccess(response: AuthResponse): void {
+    console.log('✅ Auth Success - Response:', response);
+    console.log('✅ Token to store:', response.access_token);
+    console.log('✅ User to store:', response.user);
+    
+    // Normaliser l'ID de l'utilisateur pour la cohérence
+    const normalizedUser = {
+      ...response.user,
+      _id: response.user._id || (response.user as any).id // Utiliser _id ou id selon ce qui est disponible
+    };
+    
     localStorage.setItem(this.TOKEN_KEY, response.access_token);
-    localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
-    this.currentUserSubject.next(response.user);
+    localStorage.setItem(this.USER_KEY, JSON.stringify(normalizedUser));
+    this.currentUserSubject.next(normalizedUser);
+    
+    console.log('✅ Token stored:', localStorage.getItem(this.TOKEN_KEY)?.substring(0, 20) + '...');
+    console.log('✅ User stored:', localStorage.getItem(this.USER_KEY));
+    console.log('✅ Normalized user ID:', normalizedUser._id);
   }
 
   private loadUserProfile(): void {
