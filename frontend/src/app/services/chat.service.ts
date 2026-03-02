@@ -123,10 +123,9 @@ export class ChatService {
     );
   }
 
-  sendMessage(request: SendMessageRequest): Observable<Message> {
-    return this.http.post<Message>(`${this.API_URL}/messages`, request, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
-    });
+  sendMessage(request: SendMessageRequest): void {
+    console.log('📤 Envoi message via WebSocket:', request);
+    this.socket.emit('sendMessage', request);
   }
 
   // WebSocket Events
@@ -154,6 +153,7 @@ export class ChatService {
   private setupSocketListeners(): void {
     // Nouveau message reçu
     this.socket.on('newMessage', (message: any) => {
+      console.log('📨 Nouveau message reçu:', message);
       const currentMessages = this.messagesSubject.value;
       this.messagesSubject.next([...currentMessages, message]);
     });

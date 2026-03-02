@@ -74,6 +74,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     // Messages
     const messagesSub = this.chatService.messages$.subscribe(messages => {
+      console.log('💬 Messages mis à jour:', messages);
       this.messages = messages;
     });
 
@@ -110,15 +111,9 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.chatService.sendMessage({
         roomId: this.currentRoom._id,
         content
-      }).subscribe({
-        next: () => {
-          this.messageForm.reset();
-          this.stopTyping();
-        },
-        error: (error) => {
-          alert('Erreur lors de l\'envoi du message');
-        }
       });
+      this.messageForm.reset();
+      this.stopTyping();
     }
   }
 
